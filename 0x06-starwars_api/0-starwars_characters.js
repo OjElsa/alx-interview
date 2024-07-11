@@ -11,19 +11,37 @@ if (process.argv.length !== 3) {
 const movieId = process.argv[2];
 const baseUrl = `https://swapi-api.alx-tools.com/api/films/${movieId}/`;
 
-axios.get(baseUrl)
-  .then(response => {
+async function getCharacterNames(characters) {
+  const names = [];
+
+  for (const characterUrl of characters) {
+    try {
+      const response = await axios.get(characterUrl);
+      names.push(response.data.name);
+    } catch (error) {
+      console.error('Error fetching character:', error);
+    }
+  }
+
+  return names;
+}
+
+async function main() {
+  try {
+    const response = await axios.get(baseUrl);
     const characters = response.data.characters;
-    characters.forEach(characterUrl => {
-      axios.get(characterUrl)
-        .then(characterResponse => {
-          console.log(characterResponse.data.name);
-        })
-        .catch(error => {
-          console.error('Error fetching character:', error);
-        });
+
+    const characterNames = await getCharacterNames(characters);
+
+    // Print character names in the correct order
+    characterNames.forEach(name => {
+      console.log(name);
     });
-  })
-  .catch(error => {
+
+  } catch (error) {
     console.error('Error fetching movie:', error);
-  });
+  }
+}
+
+main();
+
