@@ -1,47 +1,29 @@
 #!/usr/bin/node
 
-const axios = require('axios');
-const process = require('process');
+const request = require('request');
 
-if (process.argv.length !== 3) {
-  console.log('Usage: ./0-starwars_characters.js <movie_id>');
-  process.exit(1);
-}
+const filmNum = process.argv[2] + '/';
+const filmURL = 'https://swapi-api.alx-tools.com/api/films/';
 
-const movieId = process.argv[2];
-const baseUrl = `https://swapi-api.alx-tools.com/api/films/${movieId}/`;
+// Makes API request, sets async to allow await promise
+request(filmURL + filmNum, async function (err, res, body) {
+  if (err) return console.error(err);
 
-async function getCharacterNames(characters) {
-  const names = [];
+  // Find URLs of each character in the film as a list obj
+  const charURLList = JSON.parse(body).characters;
 
-  for (const characterUrl of characters) {
-    try {
-      const response = await axios.get(characterUrl);
-      names.push(response.data.name);
-    } catch (error) {
-      console.error('Error fetching character:', error);
-    }
-  }
+  // Use URL list to character pages to make new requests
+  // await queues requests until they resolve in order
+  for (const charURL of charURLList) {
+    await new Promise(function (resolve, reject) {
+      request(charURL, function (err, res, body) {
+        if (err) return console.error(err);
 
-  return names;
-}
-
-async function main() {
-  try {
-    const response = await axios.get(baseUrl);
-    const characters = response.data.characters;
-
-    const characterNames = await getCharacterNames(characters);
-
-    // Print character names in the correct order
-    characterNames.forEach(name => {
-      console.log(name);
+        // Finds each character name and prints in URL order
+        console.log(JSON.parse(body).name);
+        resolve();
+      });
     });
-
-  } catch (error) {
-    console.error('Error fetching movie:', error);
   }
-}
-
-main();
+});
 
